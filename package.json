@@ -1,0 +1,63 @@
+{
+    "name": "cocoslua",
+    "displayName": "cocoslua",
+    "description": "",
+    "version": "0.1.0",
+    "publisher": "wonyee",
+    "engines": {
+        "vscode": "^1.24.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "activationEvents": [
+        "onLanguage:lua"
+    ],
+    "main": "./out/extension",
+    "contributes": {
+        "snippets": [
+                {
+                    "language": "lua",
+                    "path": "./snippets/luasnippets.json"
+                }
+            ],
+        "languages": [
+            {
+
+                "id": "lua",
+                "aliases": [
+                    "orionlua",
+                    "lua"
+                ],
+                "extensions": [
+                    "lua"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "test": "npm run compile && node ./node_modules/vscode/bin/test"
+    },
+    "devDependencies": {
+        "typescript": "^2.6.1",
+        "vscode": "^1.1.6",
+        "tslint": "^5.8.0",
+        "@types/node": "^7.0.43",
+        "@types/mocha": "^2.2.42"
+    },
+    "dependencies": {
+        "autoc": "0.0.2",
+        "fs-extra": "^6.0.1",
+        "luaparse": "^0.2.1",
+        "vscode-debug-logger": "0.0.5",
+        "vscode-debugadapter": "^1.29.0",
+        "vscode-debugprotocol": "^1.29.0",
+        "vscode-extension-telemetry": "0.0.17",
+        "vscode-languageclient": "^4.2.1"
+    }
+}

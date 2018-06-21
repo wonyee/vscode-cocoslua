@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.exclude": {
+			"node_modules/[^l]*": true,
+			"node_modules/l[^u]*": true,
+			"node_modules/lu[^a]*": true,
+			"package-lock*": true,
+			"out/**": true,
+			".vscode/": true,
+			"src/test/": true,
+			"*.vsix": true,
+			"*.7z": true,
+			".*": true
+		},
+		"typescript.tsc.autoDetect": "off"
+	}
+}
