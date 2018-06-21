@@ -16,14 +16,13 @@
     "main": "./out/extension",
     "contributes": {
         "snippets": [
-                {
-                    "language": "lua",
-                    "path": "./snippets/luasnippets.json"
-                }
-            ],
+            {
+                "language": "lua",
+                "path": "./snippets/luasnippets.json"
+            }
+        ],
         "languages": [
             {
-
                 "id": "lua",
                 "aliases": [
                     "orionlua",
