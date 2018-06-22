@@ -9,6 +9,7 @@
 			"node_modules/[^l]*": true,
 			"node_modules/l[^u]*": true,
 			"node_modules/lu[^a]*": true,
+			"lua_install/**": true,
 			"package-lock*": true,
 			"out/**": true,
 			".vscode/": true,

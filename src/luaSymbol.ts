@@ -97,6 +97,19 @@ export function processDocument(doc: TextDocument) {
             }
           }
         }
+        else if (s.type === "TableConstructorExpression") {
+          let table_name = symbolArr[symbolArr.length-1].name;
+          currScope.push([table_name, s.range[0], s.range[1]]);
+          for (let f of s.fields) {
+            if (f.type === "TableKeyString") {
+              let names = getNames(f.key,f.range);
+              symbolArr.push(new SymbolInfoEx(names[0], SymbolKind.Variable,
+                new Range(doc.positionAt(f.range[0]), doc.positionAt(f.range[1])),
+                doc.uri, names[1]));
+            }
+          }
+          currScope.pop();
+        }
         else if (s.type === "CallStatement") {
           let le = s.expression;
           if (le.arguments) { parseRecursive(doc, le.arguments); }
@@ -109,6 +122,9 @@ export function processDocument(doc: TextDocument) {
                 new Range(doc.positionAt(asv.range[0]), doc.positionAt(asv.range[1])),
                 doc.uri, names[1]));
             }
+          }
+          if (s.init) {
+            parseRecursive(doc, s.init);
           }
         }
         else if (s.type === "ClassDeclaration") {
