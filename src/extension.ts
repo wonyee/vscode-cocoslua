@@ -28,7 +28,7 @@ export function activate(context: vscode.ExtensionContext) {
           ev.document.languageId === LUA_MODE.language &&
           ev.document.uri.scheme === LUA_MODE.scheme
         ) {
-          diagnosticCollection.clear();
+          diagnosticCollection.delete(ev.document.uri);
           workspaceProvider.update(ev.document);
         }
       }

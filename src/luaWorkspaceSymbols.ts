@@ -11,6 +11,7 @@ export class LuaWorkspaceSymbolProvider
   static _statusBarItem: StatusBarItem;
   static symbols: Thenable<SymbolInfoEx[]>;
   static natives: any;
+  static namespaces: any;
   public constructor(/*private languagemode: vscode.DocumentFilter*/) {
     this.provideWorkspaceSymbols();
     // load native symbols
@@ -18,6 +19,17 @@ export class LuaWorkspaceSymbolProvider
     var file = __dirname+'/native_symbols.json';
     LuaWorkspaceSymbolProvider._statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
     LuaWorkspaceSymbolProvider.natives = jsonfile.readFileSync(file);
+    LuaWorkspaceSymbolProvider.namespaces = [];
+    if (LuaWorkspaceSymbolProvider.natives){
+      let native = LuaWorkspaceSymbolProvider.natives['global'];
+      if (native){
+        for (let n in native){
+          if (typeof(native[n]) === "object"){
+            LuaWorkspaceSymbolProvider.namespaces.push(n);
+          }
+        }
+      }
+    }
   }
 
   public update(document: TextDocument) {

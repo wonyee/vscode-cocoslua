@@ -22,6 +22,9 @@ function traverse(o: any, parent: string, v: vscode.CompletionItem[], match: str
           if (o[i].detail) {
             sugg.detail = o[i].detail;
           }
+          if (o[i].ret) {
+            sugg.detail += "\nret: " + o[i].ret;
+          }
           if (o[i].define) {
             sugg.insertText = new vscode.SnippetString(o[i].define);
           }
@@ -37,6 +40,9 @@ function traverse(o: any, parent: string, v: vscode.CompletionItem[], match: str
         sugg.kind = vscode.CompletionItemKind.Function;
         if (o[i].detail) {
           sugg.detail = o[i].detail;
+        }
+        if (o[i].ret) {
+          sugg.detail += "\nret: " + o[i].ret;
         }
         if (o[i].define) {
           sugg.insertText = new vscode.SnippetString(o[i].define);
@@ -54,6 +60,136 @@ function in_array(searchString: string, array: string[]) {
     }
   }
   return false;
+}
+
+export function getType(arr: Array<string>) {
+  if (arr.length === 1) {
+    if (LuaWorkspaceSymbolProvider.namespaces.includes(arr[0])) {
+      return arr[0];
+    }
+    return "";
+  }
+  //  let ret :Array<string> = [];
+  let idx = 0;
+  let sym = LuaWorkspaceSymbolProvider.natives["global"];
+  while (true) {
+    if (idx > arr.length - 1) {
+      return arr[arr.length - 1];
+    }
+    let key = arr[idx];
+    if (sym[key]) {
+      sym = sym[key];
+      if (sym.type === "method") {
+        let ret = sym.ret;
+        //console.log("found method: "+sym.define+" ret:"+sym.ret);
+        if (idx === arr.length - 1) {
+          let a = ret.split('.');
+          return a[a.length - 1];
+        }
+        let ret_split = ret.split('.');
+        if (ret_split.length === 2 && idx > 0) {
+          arr[idx] = ret_split[1];
+          arr[idx - 1] = ret_split[0];
+          sym = LuaWorkspaceSymbolProvider.natives["global"];
+          idx--;
+          continue;
+        }
+      }
+      idx++;
+    }
+    else {
+      return "";
+    }
+  }
+  return "";
+}
+
+function CheckType(doc: vscode.TextDocument, pos: vscode.Position) {
+  // let line = doc.lineAt(pos);
+  // let code = line.text.charCodeAt(pos.character-2); // .或者:前面那个字符
+  // if ((code > 47 && code < 58) || // numeric (0-9)
+  //     (code > 64 && code < 91) || // upper alpha (A-Z)
+  //     (code > 96 && code < 123) || // lower alpha (a-z)
+  //     (code === 95)) { // underscore
+
+  // }
+  let curr_pos = pos.character - 1;
+  let line = doc.lineAt(pos).text;
+  let failed = false;
+  let arr: Array<string> = [];
+  while (true) {
+    let left = new vscode.Position(pos.line, curr_pos);
+    let left_range = doc.getWordRangeAtPosition(left, new RegExp('[\(,=\s]+')); // 如果遇到( , =则可以停止了
+    let stop_char = "";
+    if (left_range) {
+      stop_char = doc.getText(left_range);
+    }
+    if (stop_char === "" || stop_char.trim() === "") { // 没有满足停止条件，继续
+      left_range = doc.getWordRangeAtPosition(left, new RegExp('[)\s]+'));
+      let close_params = "";
+      if (left_range) {
+        close_params = doc.getText(left_range);
+      }
+      if (close_params === "" || close_params.trim() === "") { // 不是函数参数列表，继续
+        left_range = doc.getWordRangeAtPosition(left, new RegExp('[a-zA-Z0-9_\s]+'));
+        let word = "";
+        if (left_range) {
+          word = doc.getText(left_range);
+          console.log("word:" + word);
+          arr.push(word);
+          curr_pos = left_range.start.character - 1;
+          if (curr_pos < 0) {
+            break;
+          }
+        }
+        else {
+          failed = true;
+          break;
+        }
+      }
+      else if (left_range) {
+        // 往左边一直追溯到匹配的那个(
+        console.log("search for matching bracket");
+        let cur = left_range.start.character - 1;
+        let match_count = 0;
+        while (cur > 0) {
+          let code = line.charCodeAt(cur);
+          if (code === 41) { // ')'
+            match_count--;
+          }
+          else if (code === 40) {
+            match_count++;
+          }
+          if (match_count > 0) { // found!
+            curr_pos = cur - 1;
+            break;
+          }
+          cur = cur - 1;
+        }
+      }
+      else {
+        failed = true;
+        break;
+      }
+    }
+    else {
+      console.log("stop!");
+      break;
+    }
+  }
+  if (failed) {
+    console.log("FAILED");
+  }
+  else {
+    console.log("---------------------\nstack: ");
+    for (let a of arr) {
+      console.log(a);
+    }
+    arr.reverse();
+    let retArr = getType(arr);
+    return retArr;
+  }
+  return "";
 }
 export class LuaCompletionProvider implements vscode.CompletionItemProvider {
   public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position,
@@ -86,11 +222,11 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
         let posleft2 = new vscode.Position(position.line, position.character - 2);
         let wordRange = document.getWordRangeAtPosition(posleft2, new RegExp('[a-zA-Z0-9_\(\)]+'));
         let prefix = document.getText(wordRange);
-        if ((prefix === 'getInstance()' || prefix === 'new()') && wordRange) { // 如果是getInstance()，那么往前找类型来进行匹配！
-          posleft2 = new vscode.Position(position.line, wordRange.start.character - 2);
-          wordRange = document.getWordRangeAtPosition(posleft2, new RegExp('[a-zA-Z0-9_\(\)]+'));
-          prefix = document.getText(wordRange);
-        }
+        // if ((prefix === 'getInstance()' || prefix === 'new()') && wordRange) { // 如果是getInstance()，那么往前找类型来进行匹配！
+        //   posleft2 = new vscode.Position(position.line, wordRange.start.character - 2);
+        //   wordRange = document.getWordRangeAtPosition(posleft2, new RegExp('[a-zA-Z0-9_\(\)]+'));
+        //   prefix = document.getText(wordRange);
+        // }
         if (prefix === 'self') { // 如果是self，不需要从native里面找
           if (txt === '.') {
             class_members = true;
@@ -100,6 +236,11 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
           }
         }
         else {
+          let checkType = CheckType(document, position);
+          if (checkType !== ""){
+            prefix = checkType;
+          }
+
           // .或者: 尝试根据prefix找native的匹配
           already_suggested = true;
           //////////native提示
@@ -108,7 +249,7 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
             if (txt === '.') { // 如果是. 那么可能是table的内容？ 根据prefix搜搜看
               LuaWorkspaceSymbolProvider.symbols.then(items => {
                 items.forEach(item => {
-                  if (item.containerName === prefix){
+                  if (item.containerName === prefix) {
                     let sugg = new vscode.CompletionItem(item.name);
                     sugg.kind = vscode.CompletionItemKind.Variable;
                     if (item.location.uri === document.uri) { //同文件
@@ -118,12 +259,29 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                       sugg.sortText = 'u'; // other file
                     }
                     let keystr = item.name + item.containerName;
-                    if (!sugg_set.has(keystr)){
+                    if (!sugg_set.has(keystr)) {
                       sugg_set.add(keystr);
                       suggestions.push(sugg);
                     }
                   }
                 });
+              });
+            }
+            else if (txt === ':') { // 会不会是已知类型的变量？
+              let is_var = false;
+              let var_type = "";
+              LuaWorkspaceSymbolProvider.symbols.then(items => {
+                items.forEach(item => {
+                  if (item.location.uri === document.uri) {
+                    if (item.name === prefix) {
+                      is_var = true;
+                      var_type = item.type;
+                    }
+                  }
+                });
+                if (is_var) {
+                  traverse(<JSON>LuaWorkspaceSymbolProvider.natives, '', suggestions, var_type);
+                }
               });
             }
           }
@@ -149,7 +307,7 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                 }
                 sugg.sortText = 'b'; // class method current file
                 let keystr = item.name + item.containerName;
-                if (!sugg_set.has(keystr)){
+                if (!sugg_set.has(keystr)) {
                   sugg_set.add(keystr);
                   suggestions.push(sugg);
                 }
@@ -176,7 +334,7 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                 }
                 sugg.sortText = 'b'; // class method current file
                 let keystr = item.name + item.containerName;
-                if (!sugg_set.has(keystr)){
+                if (!sugg_set.has(keystr)) {
                   sugg_set.add(keystr);
                   suggestions.push(sugg);
                 }
@@ -237,7 +395,7 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                     if (item.containerName === 'global') { // 全局都放
                       sugg.sortText = 'g'; // global current file
                       let keystr = item.name + item.containerName;
-                      if (!sugg_set.has(keystr)){
+                      if (!sugg_set.has(keystr)) {
                         sugg_set.add(keystr);
                         suggestions.push(sugg);
                       }
@@ -246,7 +404,7 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                       if (item.location.range.start.line <= position.line) {
                         sugg.sortText = 'e'; // 'local' current file
                         let keystr = item.name + item.containerName;
-                        if (!sugg_set.has(keystr)){
+                        if (!sugg_set.has(keystr)) {
                           sugg_set.add(keystr);
                           suggestions.push(sugg);
                         }
@@ -267,7 +425,7 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                         sugg.sortText = 'c'; // in scope
                       }
                       let keystr = item.name + item.containerName;
-                      if (!sugg_set.has(keystr)){
+                      if (!sugg_set.has(keystr)) {
                         sugg_set.add(keystr);
                         suggestions.push(sugg);
                       }
@@ -279,7 +437,7 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                   if (item.containerName === 'global' && item.location.range.start.line <= position.line) {
                     sugg.sortText = 'g'; // global in current file
                     let keystr = item.name + item.containerName;
-                    if (!sugg_set.has(keystr)){
+                    if (!sugg_set.has(keystr)) {
                       sugg_set.add(keystr);
                       suggestions.push(sugg);
                     }
@@ -294,7 +452,7 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                       sugg.sortText = 'c'; // in scope
                     }
                     let keystr = item.name + item.containerName;
-                    if (!sugg_set.has(keystr)){
+                    if (!sugg_set.has(keystr)) {
                       sugg_set.add(keystr);
                       suggestions.push(sugg);
                     }
@@ -330,7 +488,7 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                 }
                 sugg.sortText = 'u'; // other file
                 let keystr = item.name + item.containerName;
-                if (!sugg_set.has(keystr)){
+                if (!sugg_set.has(keystr)) {
                   sugg_set.add(keystr);
                   suggestions.push(sugg);
                 }

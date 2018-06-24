@@ -3,24 +3,42 @@ import * as vscode from 'vscode';
 import { Range, SymbolInformation, SymbolKind, TextDocument, CancellationToken, Uri } from 'vscode';
 import { diagnosticCollection } from './extension';
 import { LuaWorkspaceSymbolProvider } from './luaWorkspaceSymbols';
+import { getType } from './luaAutocomplete';
 
 export class SymbolInfoEx extends SymbolInformation {
-  detail: string;
+  detail: string = "";
+  type: string = "";
   // constructor(name: string, kind: SymbolKind, containerName: string, location: Location, dt? : string){
   //   super(name,kind,containerName,location);
   //   if (dt) {this.detail = dt;}
   //   else {this.detail = "";}
   // };
-  constructor(name: string, kind: SymbolKind, range: Range, uri?: Uri, containerName?: string, dt?: string) {
+  constructor(name: string, kind: SymbolKind, range: Range, uri?: Uri, containerName?: string, dt?: string, tp?: string) {
     super(name, kind, range, uri, containerName);
     if (dt) { this.detail = dt; }
-    else { this.detail = ""; }
+    if (tp) { this.type = tp; }
   }
 }
 
 export class LuaSymbolProvider implements vscode.DocumentSymbolProvider {
   provideDocumentSymbols = (doc: TextDocument, token: CancellationToken) =>
     Promise.resolve(processDocument(doc))
+}
+
+function getFull(node: any, str: string){
+  if (node.base){
+    str = getFull(node.base, str);
+  }
+  if (node.indexer){
+    str += node.indexer;
+  }
+  if (node.name){
+    str += node.name;
+  }
+  else if (node.identifier){
+    str += node.identifier.name;
+  }
+  return str;
 }
 
 export function processDocument(doc: TextDocument) {
@@ -87,18 +105,47 @@ export function processDocument(doc: TextDocument) {
     /////////////////
     function parseRecursive(doc: TextDocument, body: any) {
       for (let s of body) {
+        //let pos = doc.positionAt(s.range[0]);
+        //console.log("type:"+s.type+" line:"+pos.line);
         if (s.type === "LocalStatement") {
           let ls = s.variables;
+          let idx = 0;
           for (let v of ls) {
             if (v.type === "Identifier") {
+              let type = "";
+              if (s.init){
+                if (s.init[idx]){
+                  // checktype
+                  let str = "";
+                  str = getFull(s.init[idx], str);
+                  str = str.replace('.',':');
+                  let arr = str.split(':');
+                  type = getType(arr);
+                }
+              }
+              if (type !== "") {
+                console.log("var:"+v.name+" type:"+type);
+              }
               symbolArr.push(new SymbolInfoEx(v.name, SymbolKind.Variable,
                 new Range(doc.positionAt(v.range[0]), doc.positionAt(v.range[1])),
-                doc.uri, getScope(v.range)));
+                doc.uri, getScope(v.range),"",type));
             }
           }
         }
         else if (s.type === "TableConstructorExpression") {
-          let table_name = symbolArr[symbolArr.length-1].name;
+          let table_name:string;
+          if (symbolArr.length === 0){
+            table_name = '@anonymous'+String(anonymous_idx++);
+          }
+          else {
+            let last_sym = symbolArr[symbolArr.length-1];
+            if (last_sym.location.range.contains(new vscode.Range(doc.positionAt(s.range[0]),doc.positionAt(s.range[1])))){
+              table_name = last_sym.name;
+            }
+            else{
+              table_name = '@anonymous'+String(anonymous_idx++);
+            }
+          }
           currScope.push([table_name, s.range[0], s.range[1]]);
           for (let f of s.fields) {
             if (f.type === "TableKeyString") {
@@ -106,12 +153,16 @@ export function processDocument(doc: TextDocument) {
               symbolArr.push(new SymbolInfoEx(names[0], SymbolKind.Variable,
                 new Range(doc.positionAt(f.range[0]), doc.positionAt(f.range[1])),
                 doc.uri, names[1]));
+              if (f.value && f.value.body) {
+                parseRecursive(doc, f.value.body);
+              }
             }
           }
           currScope.pop();
         }
         else if (s.type === "CallStatement") {
           let le = s.expression;
+          if (le.base && le.base.arguments) { parseRecursive(doc, le.base.arguments); }
           if (le.arguments) { parseRecursive(doc, le.arguments); }
         }
         else if (s.type === "AssignmentStatement") {
@@ -119,7 +170,7 @@ export function processDocument(doc: TextDocument) {
             let names = getNames(asv, asv.range);
             if (names[0] !== "" && !checkExist(names)) {
               symbolArr.push(new SymbolInfoEx(names[0], SymbolKind.Variable,
-                new Range(doc.positionAt(asv.range[0]), doc.positionAt(asv.range[1])),
+                new Range(doc.positionAt(s.range[0]), doc.positionAt(s.range[1])),
                 doc.uri, names[1]));
             }
           }
@@ -225,7 +276,8 @@ export function processDocument(doc: TextDocument) {
     }
   } catch (err) {
     if (!(err instanceof SyntaxError)) {
-      console.log(err.message);
+      console.error(err.message);
+      console.error(err.stack);
       throw err;
     }
     const match = err.message.match(/\[(\d+):(\d+)\]/);
