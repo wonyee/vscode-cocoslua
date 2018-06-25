@@ -202,6 +202,7 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
       suggestions = [];
 
       let sugg_set: Set<string> = new Set();
+      let sugg_word_set: Set<string> = new Set();
       let already_suggested = false;
       let class_methods = false;
       let class_members = false;
@@ -237,7 +238,7 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
         }
         else {
           let checkType = CheckType(document, position);
-          if (checkType !== ""){
+          if (checkType !== "") {
             prefix = checkType;
           }
 
@@ -262,6 +263,9 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                     if (!sugg_set.has(keystr)) {
                       sugg_set.add(keystr);
                       suggestions.push(sugg);
+                    }
+                    if (!sugg_word_set.has(item.name)) {
+                      sugg_word_set.add(item.name);
                     }
                   }
                 });
@@ -311,6 +315,9 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                   sugg_set.add(keystr);
                   suggestions.push(sugg);
                 }
+                if (!sugg_word_set.has(item.name)) {
+                  sugg_word_set.add(item.name);
+                }
               }
             });
             if (suggestions.length > 0) {
@@ -337,6 +344,9 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                 if (!sugg_set.has(keystr)) {
                   sugg_set.add(keystr);
                   suggestions.push(sugg);
+                }
+                if (!sugg_word_set.has(item.name)) {
+                  sugg_word_set.add(item.name);
                 }
               }
             });
@@ -399,6 +409,9 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                         sugg_set.add(keystr);
                         suggestions.push(sugg);
                       }
+                      if (!sugg_word_set.has(item.name)) {
+                        sugg_word_set.add(item.name);
+                      }
                     }
                     else if (item.containerName === '') { // local 只放前面的
                       if (item.location.range.start.line <= position.line) {
@@ -407,6 +420,9 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                         if (!sugg_set.has(keystr)) {
                           sugg_set.add(keystr);
                           suggestions.push(sugg);
+                        }
+                        if (!sugg_word_set.has(item.name)) {
+                          sugg_word_set.add(item.name);
                         }
                       }
                     }
@@ -429,6 +445,9 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                         sugg_set.add(keystr);
                         suggestions.push(sugg);
                       }
+                      if (!sugg_word_set.has(item.name)) {
+                        sugg_word_set.add(item.name);
+                      }
                     }
                   }
                 }
@@ -440,6 +459,9 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                     if (!sugg_set.has(keystr)) {
                       sugg_set.add(keystr);
                       suggestions.push(sugg);
+                    }
+                    if (!sugg_word_set.has(item.name)) {
+                      sugg_word_set.add(item.name);
                     }
                   }
                   else if ((container[container.length - 1] === item.containerName ||
@@ -455,6 +477,9 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                     if (!sugg_set.has(keystr)) {
                       sugg_set.add(keystr);
                       suggestions.push(sugg);
+                    }
+                    if (!sugg_word_set.has(item.name)) {
+                      sugg_word_set.add(item.name);
                     }
                   }
                 }
@@ -492,6 +517,9 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                   sugg_set.add(keystr);
                   suggestions.push(sugg);
                 }
+                if (!sugg_word_set.has(item.name)) {
+                  sugg_word_set.add(item.name);
+                }
               }
             });
             if (suggestions.length > 0) {
@@ -503,7 +531,33 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
           });
         } // not class
       }
+      { // word suggestions
+        let posleft = new vscode.Position(position.line, position.character - 1);
+        let txt = document.getText(new vscode.Range(posleft, position));
+        if (txt !== '.' && txt !== ':') {
+          let wordRange = document.getWordRangeAtPosition(position, new RegExp('([a-zA-Z_][a-zA-Z0-9_]+)|([a-zA-Z_])'));
+          if (wordRange) {
+            let prefix = document.getText(wordRange);
 
+            let text = document.getText();
+            let match = text.match(new RegExp(/([a-zA-Z_][a-zA-Z0-9_][a-zA-Z0-9_]+)/g)); // 至少三个
+            if (match) {
+              for (let m of match) {
+                let lm = m.toLowerCase();
+                let lp = prefix.toLowerCase();
+                if (lm.startsWith(lp)) {
+                  if (!sugg_word_set.has(m)) {
+                    sugg_word_set.add(m);
+                    let sugg = new vscode.CompletionItem(m);
+                    sugg.kind = vscode.CompletionItemKind.Text;
+                    suggestions.push(sugg);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
       resolve(suggestions);
     });
   }
