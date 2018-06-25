@@ -15,6 +15,7 @@ function traverse(o: any, parent: string, v: vscode.CompletionItem[], match: str
     if (o[i] !== null && typeof (o[i]) === "object") {
       //going one step down in the object tree!!
       if (parent === match) {
+        //console.log("typed = "+typed);
         let sugg = new vscode.CompletionItem(i);
         sugg.kind = vscode.CompletionItemKind.Class;
         if (o[i].type === 'method') {
@@ -135,7 +136,7 @@ function CheckType(doc: vscode.TextDocument, pos: vscode.Position) {
         let word = "";
         if (left_range) {
           word = doc.getText(left_range);
-          console.log("word:" + word);
+          //console.log("word:" + word);
           arr.push(word);
           curr_pos = left_range.start.character - 1;
           if (curr_pos < 0) {
@@ -149,7 +150,7 @@ function CheckType(doc: vscode.TextDocument, pos: vscode.Position) {
       }
       else if (left_range) {
         // 往左边一直追溯到匹配的那个(
-        console.log("search for matching bracket");
+        //console.log("search for matching bracket");
         let cur = left_range.start.character - 1;
         let match_count = 0;
         while (cur > 0) {
@@ -173,18 +174,18 @@ function CheckType(doc: vscode.TextDocument, pos: vscode.Position) {
       }
     }
     else {
-      console.log("stop!");
+      //console.log("stop!");
       break;
     }
   }
   if (failed) {
-    console.log("FAILED");
+    //console.log("FAILED");
   }
   else {
-    console.log("---------------------\nstack: ");
-    for (let a of arr) {
-      console.log(a);
-    }
+    // console.log("---------------------\nstack: ");
+    // for (let a of arr) {
+    //   console.log(a);
+    // }
     arr.reverse();
     let retArr = getType(arr);
     return retArr;
@@ -207,7 +208,17 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
       let class_methods = false;
       let class_members = false;
       let posleft = new vscode.Position(position.line, position.character - 1);
-      let txt = document.getText(new vscode.Range(posleft, position));
+      let txt = "";
+      let typed = "";
+      if (posleft ) {
+        txt = document.getText(new vscode.Range(posleft, position));
+        if (txt !== '.' && txt !== ':'){
+          let wordRange = document.getWordRangeAtPosition(position, new RegExp('([a-zA-Z_][a-zA-Z0-9_]+)|([a-zA-Z_])'));
+          if (wordRange) {
+            typed = document.getText(wordRange).toLowerCase();
+          }
+        }
+      }
       let line = document.lineAt(position);
       line.text.trim();
       //////////////特定关键词，给出后续关键词提示
@@ -522,6 +533,26 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                 }
               }
             });
+            { // word suggestions
+              if (typed !== "") {
+                let text = document.getText();
+                let match = text.match(new RegExp(/([a-zA-Z_][a-zA-Z0-9_][a-zA-Z0-9_]+)/g)); // 至少三个
+                if (match) {
+                  for (let m of match) {
+                    let lm = m.toLowerCase();
+                    if (lm.startsWith(typed)) {
+                      if (!sugg_word_set.has(m)) {
+                        sugg_word_set.add(m);
+                        let sugg = new vscode.CompletionItem(m);
+                        sugg.kind = vscode.CompletionItemKind.Text;
+                        sugg.sortText = 'z';
+                        suggestions.push(sugg);
+                      }
+                    }
+                  }
+                }
+              }
+            }
             if (suggestions.length > 0) {
               resolve(suggestions);
             }
@@ -530,33 +561,6 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
             }
           });
         } // not class
-      }
-      { // word suggestions
-        let posleft = new vscode.Position(position.line, position.character - 1);
-        let txt = document.getText(new vscode.Range(posleft, position));
-        if (txt !== '.' && txt !== ':') {
-          let wordRange = document.getWordRangeAtPosition(position, new RegExp('([a-zA-Z_][a-zA-Z0-9_]+)|([a-zA-Z_])'));
-          if (wordRange) {
-            let prefix = document.getText(wordRange);
-
-            let text = document.getText();
-            let match = text.match(new RegExp(/([a-zA-Z_][a-zA-Z0-9_][a-zA-Z0-9_]+)/g)); // 至少三个
-            if (match) {
-              for (let m of match) {
-                let lm = m.toLowerCase();
-                let lp = prefix.toLowerCase();
-                if (lm.startsWith(lp)) {
-                  if (!sugg_word_set.has(m)) {
-                    sugg_word_set.add(m);
-                    let sugg = new vscode.CompletionItem(m);
-                    sugg.kind = vscode.CompletionItemKind.Text;
-                    suggestions.push(sugg);
-                  }
-                }
-              }
-            }
-          }
-        }
       }
       resolve(suggestions);
     });
