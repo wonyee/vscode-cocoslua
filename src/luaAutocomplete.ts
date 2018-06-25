@@ -154,7 +154,6 @@ function CheckType(doc: vscode.TextDocument, pos: vscode.Position) {
           }
         }
         else {
-          failed = true;
           break;
         }
       }
