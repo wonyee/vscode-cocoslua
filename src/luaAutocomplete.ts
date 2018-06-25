@@ -195,6 +195,9 @@ function CheckType(doc: vscode.TextDocument, pos: vscode.Position) {
     // for (let a of arr) {
     //   console.log(a);
     // }
+    if (arr.length === 1 && arr[0] === "self"){
+      return "self";
+    }
     arr.reverse();
     let retArr = getType(arr);
     return retArr;
@@ -248,6 +251,10 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
         //   wordRange = document.getWordRangeAtPosition(posleft2, new RegExp('[a-zA-Z0-9_\(\)]+'));
         //   prefix = document.getText(wordRange);
         // }
+        let checkType = CheckType(document, position);
+        if (checkType !== "") {
+          prefix = checkType;
+        }
         if (prefix === 'self') { // 如果是self，不需要从native里面找
           if (txt === '.') {
             class_members = true;
@@ -257,12 +264,6 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
           }
         }
         else {
-          let checkType = CheckType(document, position);
-          if (checkType !== "") {
-            prefix = checkType;
-          }
-
-          // .或者: 尝试根据prefix找native的匹配
           already_suggested = true;
           //////////native提示
           traverse(<JSON>LuaWorkspaceSymbolProvider.natives, '', suggestions, prefix);

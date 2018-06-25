@@ -12,3 +12,5 @@ optimized for cocos2d-x
 * Error Report
 * Optimized for Cocos2d-x 3.x
 
+## Preview
+![preview](https://raw.githubusercontent.com/wonyee/vscode-cocoslua/master/images/cocoslua.gif)

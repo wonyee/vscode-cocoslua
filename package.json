@@ -2,7 +2,7 @@
     "name": "cocoslua",
     "displayName": "cocoslua",
     "description": "",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "publisher": "wonyee",
     "engines": {
         "vscode": "^1.24.0"
