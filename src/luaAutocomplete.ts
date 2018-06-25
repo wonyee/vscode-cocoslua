@@ -1,6 +1,10 @@
 import * as vscode from 'vscode';
 import { LuaWorkspaceSymbolProvider } from './luaWorkspaceSymbols';
 
+
+let sugg_set: Set<string>;
+let sugg_word_set: Set<string>;
+
 // sortText:
 // a: keyword
 // b: class method (current file)
@@ -31,6 +35,9 @@ function traverse(o: any, parent: string, v: vscode.CompletionItem[], match: str
           }
         }
         sugg.sortText = 'i'; // native
+        if (!sugg_word_set.has(i)) {
+          sugg_word_set.add(i);
+        }
         v.push(sugg);
       }
       traverse(o[i], i, v, match);
@@ -49,6 +56,9 @@ function traverse(o: any, parent: string, v: vscode.CompletionItem[], match: str
           sugg.insertText = new vscode.SnippetString(o[i].define);
         }
         sugg.sortText = 'i'; // native
+        if (!sugg_word_set.has(o[i])) {
+          sugg_word_set.add(o[i]);
+        }
         v.push(sugg);
       }
     }
@@ -202,8 +212,8 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
       let suggestions: vscode.CompletionItem[];
       suggestions = [];
 
-      let sugg_set: Set<string> = new Set();
-      let sugg_word_set: Set<string> = new Set();
+      sugg_set = new Set();
+      sugg_word_set = new Set();
       let already_suggested = false;
       let class_methods = false;
       let class_members = false;
