@@ -1,8 +1,15 @@
 {
     "name": "cocoslua",
     "displayName": "cocoslua",
-    "description": "",
-    "version": "0.1.2",
+    "description": "lua intellisense optimized for cocos2d-x",
+    "keywords": [
+        "lua",
+        "cocos",
+        "cocos2d",
+        "cocos2d-x",
+        "cocos-lua"
+    ],
+    "version": "0.1.3",
     "publisher": "wonyee",
     "engines": {
         "vscode": "^1.24.0"
@@ -30,8 +37,9 @@
             {
                 "id": "lua",
                 "aliases": [
-                    "orionlua",
-                    "lua"
+                    "cocoslua",
+                    "lua",
+                    "cocos-lua"
                 ],
                 "extensions": [
                     "lua"
@@ -57,7 +65,9 @@
     "dependencies": {
         "autoc": "0.0.2",
         "fs-extra": "^6.0.1",
+        "lua-fmt": "^2.6.0",
         "luaparse": "^0.2.1",
+        "utf8": "^3.0.0",
         "vscode-debug-logger": "0.0.5",
         "vscode-debugadapter": "^1.29.0",
         "vscode-debugprotocol": "^1.29.0",

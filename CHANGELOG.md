@@ -1,7 +1,13 @@
 # Change Log
-All notable changes to the "orionlua" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+## [0.1.3]
+- import lua-fmt from trixnz, so we can format lua
+- replace "something--comments" with "something --comments"
+  to avoid comments been put to a new line
+
+## [0.1.2]
+- bugfix
+- add preview
 
 ## [0.1.1]
 - parse tables
@@ -9,6 +15,3 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - a little type check and suggestions
 - kill duplicated suggestions
 
-## [0.1.2]
-- bugfix
-- add preview

@@ -8,6 +8,7 @@ import { LuaSymbolProvider }          from './luaSymbol';
 import { LuaWorkspaceSymbolProvider } from './luaWorkspaceSymbols';
 import { LuaCompletionProvider }      from './luaAutocomplete';
 import { LuaDefinitionProvider }      from './luaDefinition';
+import { LuaDocumentFormatter }       from './luaFormat';
 //var fileWatcher: vscode.FileSystemWatcher;
 
 const LUA_MODE: vscode.DocumentFilter = { language: 'lua', scheme: 'file' };
@@ -39,6 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(languages.registerDocumentSymbolProvider(LUA_MODE,new LuaSymbolProvider()));
     context.subscriptions.push(languages.registerCompletionItemProvider(LUA_MODE,new LuaCompletionProvider(),'.',':'));
     context.subscriptions.push(languages.registerDefinitionProvider(LUA_MODE, new LuaDefinitionProvider()));
+    context.subscriptions.push(languages.registerDocumentFormattingEditProvider(LUA_MODE, new LuaDocumentFormatter()));
     diagnosticCollection = languages.createDiagnosticCollection('lua');
     context.subscriptions.push(diagnosticCollection);
 

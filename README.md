@@ -14,3 +14,7 @@ optimized for cocos2d-x
 
 ## Preview
 ![preview](https://raw.githubusercontent.com/wonyee/vscode-cocoslua/master/images/cocoslua.gif)
+
+## Dependences
+* luaparse
+* lua-fmt
