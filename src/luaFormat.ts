@@ -24,3 +24,17 @@ export class LuaDocumentFormatter implements vscode.DocumentFormattingEditProvid
         });
     }
 }
+export class LuaDocumentRangeFormatter implements vscode.DocumentRangeFormattingEditProvider {
+    public provideDocumentRangeFormattingEdits(document: vscode.TextDocument, range: vscode.Range):
+        Thenable<vscode.TextEdit[]> {
+        return new Promise((resolve, reject) => {
+            let text = document.getText(range);
+            text = text.replace(/([^-])--([^-\[])/g,'$1 --$2'); // avoid var,--comments => var,\n--comments
+            text = utf8.encode(text);
+            
+            let formattedText = formatText(text, opt);
+            return resolve([vscode.TextEdit.replace(range,
+                utf8.decode(formattedText))]);
+        });
+    }
+}

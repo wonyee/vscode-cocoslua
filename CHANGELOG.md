@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.1.4]
+- add ranged text format
+
 ## [0.1.3]
 - import lua-fmt from trixnz, so we can format lua
 - replace "something--comments" with "something --comments"
