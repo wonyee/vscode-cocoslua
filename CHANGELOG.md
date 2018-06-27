@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.1.5]
+- fix bug: typing word suggested
+- fix bug: 'global' suggested after colon
+- fix bug: non-global-table member suggested across files
+- enhance type recognition
+
 ## [0.1.4]
 - add ranged text format
 

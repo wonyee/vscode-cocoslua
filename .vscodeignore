@@ -3,10 +3,13 @@
 out/test/**
 out/**/*.map
 src/**
+lua_install/**
 .gitignore
 tsconfig.json
 vsc-extension-quickstart.md
 tslint.json
+images/*.gif
+images/f*.png
 .svn/**
 *.lua
 *.vsix

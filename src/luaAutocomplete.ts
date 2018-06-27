@@ -195,7 +195,7 @@ function CheckType(doc: vscode.TextDocument, pos: vscode.Position) {
     // for (let a of arr) {
     //   console.log(a);
     // }
-    if (arr.length === 1 && arr[0] === "self"){
+    if (arr.length === 1 && arr[0] === "self") {
       return "self";
     }
     arr.reverse();
@@ -222,9 +222,9 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
       let posleft = new vscode.Position(position.line, position.character - 1);
       let txt = "";
       let typed = "";
-      if (posleft ) {
+      if (posleft) {
         txt = document.getText(new vscode.Range(posleft, position));
-        if (txt !== '.' && txt !== ':'){
+        if (txt !== '.' && txt !== ':') {
           let wordRange = document.getWordRangeAtPosition(position, new RegExp('([a-zA-Z_][a-zA-Z0-9_]+)|([a-zA-Z_])'));
           if (wordRange) {
             typed = document.getText(wordRange).toLowerCase();
@@ -272,21 +272,39 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
               LuaWorkspaceSymbolProvider.symbols.then(items => {
                 items.forEach(item => {
                   if (item.containerName === prefix) {
-                    let sugg = new vscode.CompletionItem(item.name);
-                    sugg.kind = vscode.CompletionItemKind.Variable;
-                    if (item.location.uri === document.uri) { //同文件
-                      sugg.sortText = 'b'; // current file
+                    let inscope = false;
+                    let samefile = item.location.uri === document.uri;
+                    if (!samefile) { // 需要判断所属的table是否是全局变量
+                      for (let checkagain of items) {
+                        if (item.location.uri === checkagain.location.uri &&
+                            item.containerName === checkagain.name) {
+                          if (checkagain.containerName === 'global') {
+                            inscope = true;
+                            break;
+                          }
+                        }
+                      }
                     }
                     else {
-                      sugg.sortText = 'u'; // other file
+                      inscope = true;
                     }
-                    let keystr = item.name + item.containerName;
-                    if (!sugg_set.has(keystr)) {
-                      sugg_set.add(keystr);
-                      suggestions.push(sugg);
-                    }
-                    if (!sugg_word_set.has(item.name)) {
-                      sugg_word_set.add(item.name);
+                    if (inscope) {
+                      let sugg = new vscode.CompletionItem(item.name);
+                      sugg.kind = vscode.CompletionItemKind.Variable;
+                      if (item.location.uri === document.uri) { //同文件
+                        sugg.sortText = 'b'; // current file
+                      }
+                      else {
+                        sugg.sortText = 'u'; // other file
+                      }
+                      let keystr = item.name + item.containerName;
+                      if (!sugg_set.has(keystr)) {
+                        sugg_set.add(keystr);
+                        suggestions.push(sugg);
+                      }
+                      if (!sugg_word_set.has(item.name)) {
+                        sugg_word_set.add(item.name);
+                      }
                     }
                   }
                 });
@@ -304,7 +322,7 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                     }
                   }
                 });
-                if (is_var) {
+                if (is_var && var_type !== "") {
                   traverse(<JSON>LuaWorkspaceSymbolProvider.natives, '', suggestions, var_type);
                 }
               });

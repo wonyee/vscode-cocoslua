@@ -9,7 +9,7 @@
         "cocos2d-x",
         "cocos-lua"
     ],
-    "version": "0.1.4",
+    "version": "0.1.5",
     "publisher": "wonyee",
     "engines": {
         "vscode": "^1.24.0"

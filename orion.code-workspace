@@ -16,7 +16,7 @@
 			"src/test/": true,
 			"*.vsix": true,
 			"*.7z": true,
-			".*": true
+			".git*": true
 		},
 		"typescript.tsc.autoDetect": "off"
 	}
