@@ -25,17 +25,17 @@ export class LuaSymbolProvider implements vscode.DocumentSymbolProvider {
     Promise.resolve(processDocument(doc))
 }
 
-function getFull(node: any, str: string){
-  if (node.base){
+function getFull(node: any, str: string) {
+  if (node.base) {
     str = getFull(node.base, str);
   }
-  if (node.indexer){
+  if (node.indexer) {
     str += node.indexer;
   }
-  if (node.name){
+  if (node.name) {
     str += node.name;
   }
-  else if (node.identifier){
+  else if (node.identifier) {
     str += node.identifier.name;
   }
   return str;
@@ -113,43 +113,44 @@ export function processDocument(doc: TextDocument) {
           for (let v of ls) {
             if (v.type === "Identifier") {
               let type = "";
-              if (s.init){
-                if (s.init[idx]){
+              if (s.init) {
+                if (s.init[idx]) {
                   // checktype
                   let str = "";
                   str = getFull(s.init[idx], str);
-                  str = str.replace('.',':');
+                  str = str.replace('.', ':');
                   let arr = str.split(':');
                   type = getType(arr);
                 }
               }
               if (type !== "") {
-                console.log("var:"+v.name+" type:"+type);
+                console.log("var:" + v.name + " type:" + type);
               }
               symbolArr.push(new SymbolInfoEx(v.name, SymbolKind.Variable,
                 new Range(doc.positionAt(v.range[0]), doc.positionAt(v.range[1])),
-                doc.uri, getScope(v.range),"",type));
+                doc.uri, getScope(v.range), "", type));
             }
+            idx++;
           }
         }
         else if (s.type === "TableConstructorExpression") {
-          let table_name:string;
-          if (symbolArr.length === 0){
-            table_name = '@anonymous'+String(anonymous_idx++);
+          let table_name: string;
+          if (symbolArr.length === 0) {
+            table_name = '@anonymous' + String(anonymous_idx++);
           }
           else {
-            let last_sym = symbolArr[symbolArr.length-1];
-            if (last_sym.location.range.contains(new vscode.Range(doc.positionAt(s.range[0]),doc.positionAt(s.range[1])))){
+            let last_sym = symbolArr[symbolArr.length - 1];
+            if (last_sym.location.range.contains(new vscode.Range(doc.positionAt(s.range[0]), doc.positionAt(s.range[1])))) {
               table_name = last_sym.name;
             }
-            else{
-              table_name = '@anonymous'+String(anonymous_idx++);
+            else {
+              table_name = '@anonymous' + String(anonymous_idx++);
             }
           }
           currScope.push([table_name, s.range[0], s.range[1]]);
           for (let f of s.fields) {
             if (f.type === "TableKeyString") {
-              let names = getNames(f.key,f.range);
+              let names = getNames(f.key, f.range);
               symbolArr.push(new SymbolInfoEx(names[0], SymbolKind.Variable,
                 new Range(doc.positionAt(f.range[0]), doc.positionAt(f.range[1])),
                 doc.uri, names[1]));
@@ -166,13 +167,30 @@ export function processDocument(doc: TextDocument) {
           if (le.arguments) { parseRecursive(doc, le.arguments); }
         }
         else if (s.type === "AssignmentStatement") {
+          let idx = 0;
           for (let asv of s.variables) {
+            let type = "";
+            if (s.init) {
+              if (s.init[idx]) {
+                // checktype
+                let str = "";
+                str = getFull(s.init[idx], str);
+                str = str.replace('.', ':');
+                let arr = str.split(':');
+                type = getType(arr);
+              }
+            }
+
             let names = getNames(asv, asv.range);
+            if (type !== "") {
+              console.log("var:" + names[0] + " type:" + type);
+            }
             if (names[0] !== "" && !checkExist(names)) {
               symbolArr.push(new SymbolInfoEx(names[0], SymbolKind.Variable,
                 new Range(doc.positionAt(s.range[0]), doc.positionAt(s.range[1])),
-                doc.uri, names[1]));
+                doc.uri, names[1], "", type));
             }
+            idx++;
           }
           if (s.init) {
             parseRecursive(doc, s.init);
@@ -182,7 +200,7 @@ export function processDocument(doc: TextDocument) {
           symbolArr.push(new SymbolInfoEx(s.identifier, SymbolKind.Class,
             new Range(doc.positionAt(s.range[0]), doc.positionAt(s.range[1])),
             doc.uri, s.base));
-            classname = s.identifier;
+          classname = s.identifier;
         }
         else if (s.type === "FunctionDeclaration") {
           if (s.identifier) {
@@ -198,7 +216,7 @@ export function processDocument(doc: TextDocument) {
               detail += ")";
             }
             if (names[0] === "") {
-              names[0] = '@anonymous'+String(anonymous_idx++);
+              names[0] = '@anonymous' + String(anonymous_idx++);
             }
             let sk = SymbolKind.Function;
             if (names[1] === classname) {
@@ -210,7 +228,7 @@ export function processDocument(doc: TextDocument) {
             currScope.push([names[0], s.range[0], s.range[1]]);
           }
           else {
-            let name = '@anonymous'+String(anonymous_idx++);
+            let name = '@anonymous' + String(anonymous_idx++);
             let base = getScope(s.range);
             let sk = SymbolKind.Function;
             if (base === classname) {

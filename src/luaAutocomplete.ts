@@ -550,7 +550,7 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
                 if (match) {
                   for (let m of match) {
                     let lm = m.toLowerCase();
-                    if (lm.startsWith(typed)) {
+                    if (lm.startsWith(typed) && lm !== typed) {
                       if (!sugg_word_set.has(m)) {
                         sugg_word_set.add(m);
                         let sugg = new vscode.CompletionItem(m);
