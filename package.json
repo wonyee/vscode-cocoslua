@@ -9,7 +9,7 @@
         "cocos2d-x",
         "cocos-lua"
     ],
-    "version": "0.1.5",
+    "version": "0.1.6",
     "publisher": "wonyee",
     "engines": {
         "vscode": "^1.24.0"
@@ -19,7 +19,8 @@
         "Programming Languages"
     ],
     "activationEvents": [
-        "onLanguage:lua"
+        "onLanguage:lua",
+        "onView:symbolOutline"
     ],
     "main": "./out/extension",
     "repository": {
@@ -27,12 +28,58 @@
         "url": "https://github.com/wonyee/vscode-cocoslua"
     },
     "contributes": {
+        "commands": [
+            {
+                "command": "symbolOutline.refresh",
+                "title": "Refresh code outline",
+                "icon": {
+                    "dark": "resources/dark/icon-refresh.svg",
+                    "light": "resources/light/icon-refresh.svg"
+                }
+            },
+            {
+                "command": "symbolOutline.revealCurrentSymbol",
+                "title": "Show in code outline"
+            }
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "outline",
+                    "title": "Outline",
+                    "icon": "resources/icon.svg"
+                }
+            ]
+        },
         "snippets": [
             {
                 "language": "lua",
                 "path": "./snippets/luasnippets.json"
             }
         ],
+        "views": {
+            "outline": [
+                {
+                    "id": "symbolOutline",
+                    "name": "Code Outline"
+                }
+            ]
+        },
+        "menus": {
+            "editor/context": [
+                {
+                    "command": "symbolOutline.revealCurrentSymbol",
+                    "group": "navigation"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "symbolOutline.refresh",
+                    "when": "view == symbolOutline",
+                    "group": "navigation"
+                }
+            ]
+        },
         "languages": [
             {
                 "id": "lua",

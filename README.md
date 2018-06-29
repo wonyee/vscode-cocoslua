@@ -52,6 +52,10 @@ optimized for cocos2d-x
 <img src="https://raw.githubusercontent.com/wonyee/vscode-cocoslua/master/images/f9.png" width="414">
 
 
-## Dependences
+## Dependences and Acknowledgments
 * luaparse
+[ https://github.com/oxyc/luaparse ]
 * lua-fmt
+[ https://github.com/trixnz/lua-fmt ]
+* vscode-code-outline
+[ https://github.com/patrys/vscode-code-outline ]

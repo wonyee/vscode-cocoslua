@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.1.6]
+- code outline
+
 ## [0.1.5]
 - fix bug: typing word suggested
 - fix bug: 'global' suggested after colon
