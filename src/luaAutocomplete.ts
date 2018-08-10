@@ -232,10 +232,30 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
         }
       }
       let line = document.lineAt(position);
-      line.text.trim();
+      let trytxt = line.text.trim();
       //////////////特定关键词，给出后续关键词提示
-      if (line.text.startsWith('if') || line.text.startsWith('elseif')) {
+      if (trytxt.startsWith('if') || trytxt.startsWith('elseif')) {
         let sugg = new vscode.CompletionItem('then');
+        sugg.kind = vscode.CompletionItemKind.Keyword;
+        sugg.sortText = 'a'; // keyword
+        suggestions.push(sugg);
+      }
+      else if (trytxt.startsWith('for')) {
+        let sugg = new vscode.CompletionItem('do');
+        sugg.kind = vscode.CompletionItemKind.Keyword;
+        sugg.sortText = 'a'; // keyword
+        suggestions.push(sugg);
+        sugg = new vscode.CompletionItem('pairs');
+        sugg.kind = vscode.CompletionItemKind.Keyword;
+        sugg.sortText = 'a'; // keyword
+        suggestions.push(sugg);
+        sugg = new vscode.CompletionItem('ipairs');
+        sugg.kind = vscode.CompletionItemKind.Keyword;
+        sugg.sortText = 'a'; // keyword
+        suggestions.push(sugg);
+      }
+      else if (trytxt.startsWith('while')) {
+        let sugg = new vscode.CompletionItem('do');
         sugg.kind = vscode.CompletionItemKind.Keyword;
         sugg.sortText = 'a'; // keyword
         suggestions.push(sugg);
@@ -563,6 +583,16 @@ export class LuaCompletionProvider implements vscode.CompletionItemProvider {
             });
             { // word suggestions
               if (typed !== "") {
+                let keywords = ["return", "repeat", "until", "table", "break", "goto", "true", "false", "while"];
+                for (let k of keywords) {
+                  if (k.startsWith(typed)) {
+                    let sugg = new vscode.CompletionItem(k);
+                    sugg.kind = vscode.CompletionItemKind.Keyword;
+                    sugg.sortText = 'a';
+                    suggestions.push(sugg);
+                  }
+                }
+                
                 let text = document.getText();
                 let match = text.match(new RegExp(/([a-zA-Z_][a-zA-Z0-9_][a-zA-Z0-9_]+)/g)); // 至少三个
                 if (match) {

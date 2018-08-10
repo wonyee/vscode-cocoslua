@@ -42,7 +42,10 @@ function getFull(node: any, str: string) {
 }
 
 export function processDocument(doc: TextDocument) {
-  console.log(doc.uri.path);
+  if (!doc.uri.path.endsWith('.lua')) {
+    return Array<SymbolInfoEx>();
+  }
+  console.log("process: " + doc.uri.path);
   //type RangeAndText = [Range, string];
   const docRange = doc.validateRange(
     new Range(0, 0, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER),
@@ -124,7 +127,7 @@ export function processDocument(doc: TextDocument) {
                 }
               }
               if (type !== "") {
-                console.log("var:" + v.name + " type:" + type);
+                //console.log("var:" + v.name + " type:" + type);
               }
               symbolArr.push(new SymbolInfoEx(v.name, SymbolKind.Variable,
                 new Range(doc.positionAt(v.range[0]), doc.positionAt(v.range[1])),
@@ -183,7 +186,7 @@ export function processDocument(doc: TextDocument) {
 
             let names = getNames(asv, asv.range);
             if (type !== "") {
-              console.log("var:" + names[0] + " type:" + type);
+              //console.log("var:" + names[0] + " type:" + type);
             }
             if (names[0] !== "" && !checkExist(names)) {
               symbolArr.push(new SymbolInfoEx(names[0], SymbolKind.Variable,

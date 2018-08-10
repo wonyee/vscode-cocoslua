@@ -13,23 +13,23 @@ export class LuaWorkspaceSymbolProvider
   static natives: any;
   static namespaces: any;
   public constructor(/*private languagemode: vscode.DocumentFilter*/) {
-    this.provideWorkspaceSymbols();
     // load native symbols
     var jsonfile = require('jsonfile');
-    var file = __dirname+'/native_symbols.json';
+    var file = __dirname + '/native_symbols.json';
     LuaWorkspaceSymbolProvider._statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
     LuaWorkspaceSymbolProvider.natives = jsonfile.readFileSync(file);
     LuaWorkspaceSymbolProvider.namespaces = [];
-    if (LuaWorkspaceSymbolProvider.natives){
+    if (LuaWorkspaceSymbolProvider.natives) {
       let native = LuaWorkspaceSymbolProvider.natives['global'];
-      if (native){
-        for (let n in native){
-          if (typeof(native[n]) === "object"){
+      if (native) {
+        for (let n in native) {
+          if (typeof (native[n]) === "object") {
             LuaWorkspaceSymbolProvider.namespaces.push(n);
           }
         }
       }
     }
+    this.provideWorkspaceSymbols();
   }
 
   public update(document: TextDocument) {
@@ -89,6 +89,18 @@ function processWorkspace(/*query: string*/): Thenable<SymbolInfoEx[]> {
     .findFiles('**/*.lua', excludePattern, maxFiles)
     .then(
       workspaceFiles => {
+        let te = vscode.window.activeTextEditor;
+        if (te) {
+          let found = false;
+          workspaceFiles.forEach(doc => {
+            if (te && doc.fsPath === te.document.uri.fsPath) {
+               found = true;
+              }
+            });
+          if (!found) {
+            workspaceFiles = workspaceFiles.concat(te.document.uri);
+          }
+        }
         let openedTextDocuments = openTextDocuments(workspaceFiles);
         let processedTextDocuments = openedTextDocuments.then(
           results => {
@@ -112,6 +124,6 @@ function processWorkspace(/*query: string*/): Thenable<SymbolInfoEx[]> {
       fileError => {
         return [];
       },
-    );
+  );
   return <any>docs;
 }

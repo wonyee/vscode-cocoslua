@@ -35,6 +35,9 @@ export function activate(context: vscode.ExtensionContext) {
         }
       }
     });
+    vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument) => {
+      workspaceProvider.update(doc);
+    });
     context.subscriptions.push(languages.registerWorkspaceSymbolProvider(workspaceProvider));
 
     // providers
